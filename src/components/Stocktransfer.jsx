@@ -6,17 +6,19 @@ const branches = [
 ];
 
 const initialProducts = [
-  { barcode: "2001", name: "Laptop Bag", stock: { 1: 25, 2: 15 } },
-  { barcode: "2002", name: "Wireless Mouse", stock: { 1: 50, 2: 30 } },
-  { barcode: "2003", name: "Keyboard", stock: { 1: 40, 2: 20 } },
-  { barcode: "2004", name: "USB Flash Drive", stock: { 1: 60, 2: 45 } },
-  { barcode: "2005", name: "Notebook", stock: { 1: 80, 2: 70 } },
+  { barcode: "2001", name: "Laptop Bag", category: "Accessories", stock: { 1: 25, 2: 15 } },
+  { barcode: "2002", name: "Wireless Mouse", category: "Electronics", stock: { 1: 50, 2: 30 } },
+  { barcode: "2003", name: "Keyboard", category: "Electronics", stock: { 1: 40, 2: 20 } },
+  { barcode: "2004", name: "USB Flash Drive", category: "Storage", stock: { 1: 60, 2: 45 } },
+  { barcode: "2005", name: "Notebook", category: "Stationery", stock: { 1: 80, 2: 70 } },
 ];
 
 const StockTransfer = () => {
   const [products, setProducts] = useState(initialProducts);
   const [transferTable, setTransferTable] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewModal, setViewModal] = useState(false);
+  const [viewData, setViewData] = useState(null);
   const [editIndex, setEditIndex] = useState(null);
 
   const [selectedBarcode, setSelectedBarcode] = useState("");
@@ -63,6 +65,7 @@ const StockTransfer = () => {
     const newItem = {
       barcode: product.barcode,
       name: product.name,
+      category: product.category,
       fromBranch,
       toBranch,
       qty: transferQty,
@@ -108,6 +111,22 @@ const StockTransfer = () => {
     setTransferTable((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // ✅ NEW FUNCTION — handles viewing sticker info
+  const handleViewItem = (index) => {
+    const item = transferTable[index];
+    const oldProduct = products.find(p => p.barcode === item.barcode);
+    const newBarcode = `${item.barcode}-${item.toBranch}${Date.now().toString().slice(-3)}`; // example changed barcode
+    setViewData({
+      ...item,
+      oldBarcode: item.barcode,
+      newBarcode,
+      stockAfter: oldProduct ? oldProduct.stock[item.fromBranch] : "N/A",
+    });
+    setViewModal(true);
+  };
+
+  const closeViewModal = () => setViewModal(false);
+
   return (
     <div style={styles.container}>
       <div style={styles.branchSelectors}>
@@ -148,6 +167,7 @@ const StockTransfer = () => {
                 <td style={{ ...styles.td, display: "flex", gap: 6 }}>
                   <button onClick={() => openModal(index)} style={styles.editBtn}>✏️</button>
                   <button onClick={() => handleRemoveTransfer(index)} style={styles.deleteBtn}>🗑</button>
+                  <button onClick={() => handleViewItem(index)} style={styles.viewBtn}>👁️</button>
                 </td>
               </tr>
             ))}
@@ -160,6 +180,7 @@ const StockTransfer = () => {
         <button style={styles.transferBtn}>Transfer</button>
       </div>
 
+      {/* Add/Edit Modal */}
       {modalOpen && (
         <div style={styles.modalBackdrop}>
           <div style={styles.modal}>
@@ -202,6 +223,27 @@ const StockTransfer = () => {
                   Save
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Sticker View Modal */}
+      {viewModal && viewData && (
+        <div style={styles.modalBackdrop}>
+          <div style={styles.stickerModal}>
+            <h3 style={{ textAlign: "center" }}>📦 Product Sticker</h3>
+            <div style={styles.stickerBox}>
+              <p><b>Name:</b> {viewData.name}</p>
+              <p><b>Category:</b> {viewData.category}</p>
+              <p><b>From:</b> {branches.find(b => b.id === viewData.fromBranch)?.name}</p>
+              <p><b>To:</b> {branches.find(b => b.id === viewData.toBranch)?.name}</p>
+              <p><b>Transfer Qty:</b> {viewData.qty}</p>
+              <p><b>Old Barcode:</b> {viewData.oldBarcode}</p>
+              <p><b>New Barcode:</b> {viewData.newBarcode}</p>
+            </div>
+            <div style={{ textAlign: "center", marginTop: 12 }}>
+              <button onClick={closeViewModal} style={styles.cancelBtn}>Close</button>
             </div>
           </div>
         </div>
@@ -269,6 +311,13 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
   },
+  viewBtn: {
+    backgroundColor: "#360cc1ff",
+    padding: "6px 12px",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+  },
   actions: {
     display: "flex",
     justifyContent: "space-between",
@@ -286,7 +335,6 @@ const styles = {
     flex: 1,
     minWidth: 120,
     maxWidth: 200,
-    
   },
   transferBtn: {
     background: "#4c56b2ff",
@@ -326,6 +374,23 @@ const styles = {
   modalActions: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 },
   cancelBtn: { padding: "8px 16px", borderRadius: 6, border: "none", background: "#ccc", cursor: "pointer" },
   saveBtn: { padding: "8px 16px", borderRadius: 6, border: "none", color: "#fff" },
+
+  // ✅ New sticker style
+  stickerModal: {
+    background: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    width: "90%",
+    maxWidth: 350,
+    boxShadow: "0 0 15px rgba(0,0,0,0.2)",
+  },
+  stickerBox: {
+    border: "2px dashed #555",
+    borderRadius: 8,
+    padding: 15,
+    background: "#fafafa",
+    lineHeight: 1.5,
+  },
 };
 
 export default StockTransfer;
